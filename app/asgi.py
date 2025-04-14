@@ -3,7 +3,6 @@ from litestar.plugins.sqlalchemy import (
     SQLAlchemyAsyncConfig,
     SQLAlchemyPlugin,
 )
-
 from app.config import settings
 from app.routes import router
 
