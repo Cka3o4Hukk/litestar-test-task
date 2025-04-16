@@ -6,8 +6,12 @@ RUN apt-get update && apt-get install -y gcc libffi-dev python3-dev curl && apt-
 
 RUN pip install poetry
 
-COPY . .
+COPY pyproject.toml poetry.lock ./
 
 RUN poetry config virtualenvs.create false && poetry install --only main --no-root
+
+COPY app/ ./app/
+COPY migrations/ ./migrations/
+COPY alembic.ini ./
 
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.asgi:app --host 0.0.0.0 --port 8000"]
