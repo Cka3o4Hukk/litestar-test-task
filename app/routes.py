@@ -27,3 +27,6 @@ router = Router(
         delete("/{user_id:str}")(delete_user),
     ],
 )
+
+for route in router.routes:
+    logger.info(f"Маршрут: {route.path} (методы: {route.methods})")

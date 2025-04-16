@@ -32,7 +32,7 @@ def create_app() -> Litestar:
     app.register(router)
 
     for route in app.routes:
-        print(f"Маршрут: {route.path} (методы: {route.methods})")
+        app.logger.info(f"Маршрут: {route.path} (методы: {route.methods})")
 
     return app
 
