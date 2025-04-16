@@ -8,7 +8,7 @@ RUN pip install poetry
 
 COPY pyproject.toml poetry.lock ./
 
-RUN poetry config virtualenvs.create false && poetry install --only main --no-root
+RUN poetry config virtualenvs.create false && poetry install --with dev --no-root
 
 COPY app/ ./app/
 COPY migrations/ ./migrations/

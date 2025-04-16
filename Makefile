@@ -23,3 +23,6 @@ shell:
 
 clean:
 	docker-compose down -v --rmi local
+
+test-pytest:
+	docker-compose run --rm app pytest tests/ -v --tb=long

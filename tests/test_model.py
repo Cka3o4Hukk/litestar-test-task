@@ -66,5 +66,5 @@ async def test_user_required_fields(db_session: AsyncSession) -> None:
     db_session.add(user)
     with pytest.raises(Exception) as exc_info:
         await db_session.commit()
-    assert "значение NULL в столбце" in str(exc_info.value)
+    assert "null value in column" in str(exc_info.value)
     await db_session.rollback()

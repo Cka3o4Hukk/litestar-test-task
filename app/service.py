@@ -1,4 +1,4 @@
-# app/service.py
+from http.client import HTTPException
 import logging
 
 from app.models import User
@@ -38,16 +38,30 @@ async def create_user(data: UserCreate, user_repo: UserRepository) -> UserRead:
 
 async def list_users(user_repo: UserRepository) -> list[UserRead]:
     """Возвращает список всех пользователей."""
-    users = await user_repo.list()
-    return [UserRead.model_validate(user) for user in users]
+    try:
+        users = await user_repo.list()
+        return [UserRead.model_validate(user.to_dict()) for user in users]
+    except Exception as e:
+        logger.error(f"Error listing users: {str(e)}", exc_info=True)
+        raise
 
 
 async def get_user(user_id: str, user_repo: UserRepository) -> UserRead:
     """Возвращает пользователя по ID."""
-    user = await user_repo.get_one_or_none(id=user_id)
-    if user is None:
-        raise ValueError(f"Пользователь с ID {user_id} не найден")
-    return UserRead.model_validate(user)
+    try:
+        user = await user_repo.get_one_or_none(id=user_id)
+        if user is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Пользователь с ID {user_id} не найден"
+            )
+        return UserRead.model_validate(user.to_dict())
+    except ValueError as e:
+        logger.error(f"User not found: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Error getting user {user_id}: {str(e)}", exc_info=True)
+        raise
 
 
 async def update_user(
@@ -56,21 +70,42 @@ async def update_user(
     user_repo: UserRepository,
 ) -> UserRead:
     """Обновляет пользователя по ID."""
-    user = await user_repo.get_one_or_none(id=user_id)
-    if user is None:
-        raise ValueError(f"Пользователь с ID {user_id} не найден")
-    user_dict = data.model_dump(exclude_unset=True)
-    for key, value in user_dict.items():
-        setattr(user, key, value)
-    user = await user_repo.update(user)
-    await user_repo.session.commit()
-    return UserRead.model_validate(user)
+    try:
+        user = await user_repo.get_one_or_none(id=user_id)
+        if user is None:
+            raise ValueError(f"Пользователь с ID {user_id} не найден")
+        user_dict = data.model_dump(exclude_unset=True)
+        logger.info(f"Updating user {user_id} with data: {user_dict}")
+        for key, value in user_dict.items():
+            if value is not None:
+                setattr(user, key, value)
+        user = await user_repo.update(user)
+        await user_repo.session.commit()
+        await user_repo.session.refresh(user)
+        logger.info(f"User updated: {user.to_dict()}")
+        return UserRead.model_validate(user.to_dict())
+    except ValueError as e:
+        logger.error(f"User not found: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Error updating user {user_id}: {str(e)}", exc_info=True)
+        raise
 
 
 async def delete_user(user_id: str, user_repo: UserRepository) -> None:
     """Удаляет пользователя по ID."""
-    user = await user_repo.get_one_or_none(id=user_id)
-    if user is None:
-        raise ValueError(f"Пользователь с ID {user_id} не найден")
-    await user_repo.delete(user)
-    await user_repo.session.commit()
+    try:
+        user = await user_repo.get_one_or_none(id=user_id)
+        if user is None:
+            raise ValueError(f"Пользователь с ID {user_id} не найден")
+        logger.info(f"Deleting user {user_id}")
+        await user_repo.delete_where(User.id == user_id)
+        logger.info(f"User {user_id} deleted from repo")
+        await user_repo.session.commit()
+        logger.info(f"Deletion committed for user {user_id}")
+    except ValueError as e:
+        logger.error(f"User not found: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting user {user_id}: {str(e)}", exc_info=True)
+        raise

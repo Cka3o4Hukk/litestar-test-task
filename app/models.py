@@ -41,3 +41,13 @@ class User(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
+
+    def to_dict(self) -> dict:
+        """Преобразует объект User в словарь для сериализации."""
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "surname": self.surname,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
