@@ -14,5 +14,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-print(type(settings.database_url))
-print(settings.database_url)

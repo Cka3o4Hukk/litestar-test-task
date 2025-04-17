@@ -2,6 +2,7 @@ import logging
 from uuid import UUID
 
 from litestar.exceptions import HTTPException
+from sqlalchemy.sql import select
 
 from app.models import User
 from app.repository import UserRepository
@@ -23,7 +24,6 @@ async def create_user(data: UserCreate, user_repo: UserRepository) -> UserRead:
     try:
         async with user_repo.session.begin():
             user = await user_repo.add(User(**data.model_dump()))
-            await user_repo.session.commit()
             await user_repo.session.refresh(user)
             logger.info(f"User created: {user.id}")
             return UserRead.model_validate(user.to_dict())
@@ -39,7 +39,8 @@ async def list_users(
 ) -> list[UserRead]:
     """Возвращает список всех пользователей."""
     try:
-        users = await user_repo.list(limit=limit, offset=offset)
+        statement = select(User).limit(limit).offset(offset)
+        users = await user_repo.list(statement=statement)
         if not users:
             logger.info("No users found in the database")
         return [UserRead.model_validate(user.to_dict()) for user in users]

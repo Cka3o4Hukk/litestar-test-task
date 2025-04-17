@@ -9,7 +9,6 @@ from app.routes import router
 def create_app() -> Litestar:
     """Создаёт и настраивает приложение LiteStar."""
 
-    # Конфигурарация OpenAPI для приложения
     openapi_config = OpenAPIConfig(
         title="Users API",
         version="1.0.0",
@@ -17,19 +16,16 @@ def create_app() -> Litestar:
         root_schema_site="swagger"
     )
 
-    # Подключение к базе данных
     db_config = SQLAlchemyAsyncConfig(
         connection_string=settings.database_url,
     )
 
     app = Litestar(
-        route_handlers=[],
+        route_handlers=[router],
         plugins=[SQLAlchemyPlugin(config=db_config)],
         type_encoders={bytes: lambda b: b.decode()},
         openapi_config=openapi_config,
     )
-
-    app.register(router)
 
     for route in app.routes:
         app.logger.info(f"Маршрут: {route.path} (методы: {route.methods})")
